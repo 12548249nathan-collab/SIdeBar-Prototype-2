@@ -1,0 +1,282 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Sidebar Order Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: customer phone on the left, the bar's pickup shelf board on the right; stacks on phones */
+:root{
+  --bg:#eef0f3; --surface:#ffffff; --sunk:#e3e6eb; --fg:#1b1e2b; --muted:#5f6577;
+  --line:#d3d7df; --brass:#a8681c; --brass-soft:#f6ead8; --ok:#1f7a4d; --ok-soft:#dcf1e5;
+  --warn:#a5470f; --warn-soft:#fbe6d8; --ink:#232742;
+  --f-display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#13151f; --surface:#1d2030; --sunk:#262a3d; --fg:#ebedf3; --muted:#9aa0b4;
+  --line:#33384d; --brass:#e0a352; --brass-soft:#3a2e1d; --ok:#5cc792; --ok-soft:#183a2a;
+  --warn:#f09a62; --warn-soft:#3d2518; --ink:#0d0f18; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#13151f; --surface:#1d2030; --sunk:#262a3d; --fg:#ebedf3; --muted:#9aa0b4;
+  --line:#33384d; --brass:#e0a352; --brass-soft:#3a2e1d; --ok:#5cc792; --ok-soft:#183a2a;
+  --warn:#f09a62; --warn-soft:#3d2518; --ink:#0d0f18; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:12px}
+h1{font-family:var(--f-display);font-weight:800;font-size:2.4rem;letter-spacing:.02em;margin:0;line-height:1;text-wrap:balance}
+h1 span{color:var(--brass)}
+.sub{color:var(--muted);margin:4px 0 0;max-width:60ch}
+.reset{font:inherit;font-weight:600;background:transparent;color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px 14px;cursor:pointer}
+.reset:hover{border-color:var(--brass)}
+button:focus-visible,.slot:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.stage{display:grid;grid-template-columns:380px 1fr;gap:24px;align-items:start}
+@media (max-width:860px){.stage{grid-template-columns:1fr}}
+.label{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;font-weight:700;color:var(--muted);margin:0 0 8px}
+
+/* phone */
+.phone{background:var(--ink);border-radius:34px;padding:12px;max-width:380px;width:100%;margin:0 auto}
+.screen{background:var(--surface);border-radius:24px;min-height:620px;display:flex;flex-direction:column;overflow:hidden}
+.bar{display:flex;justify-content:space-between;align-items:center;padding:16px 18px 10px;border-bottom:1px solid var(--line)}
+.venue{font-family:var(--f-display);font-weight:800;font-size:1.5rem;letter-spacing:.02em;line-height:1}
+.venue small{display:block;font-family:var(--f-body);font-size:.75rem;font-weight:500;color:var(--muted);letter-spacing:0;margin-top:3px}
+.badge{font-size:.72rem;font-weight:700;background:var(--brass-soft);color:var(--brass);padding:4px 8px;border-radius:999px;white-space:nowrap}
+.body{padding:14px 18px;display:flex;flex-direction:column;gap:12px;flex:1}
+.step{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--brass)}
+.item{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;padding:10px 0;border-bottom:1px dashed var(--line)}
+.item b{font-weight:600}
+.item .meta{grid-column:1;font-size:.8rem;color:var(--muted)}
+.qty{grid-row:1/span 2;grid-column:2;display:flex;align-items:center;gap:8px}
+.qty button{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--fg);font-size:1rem;cursor:pointer;line-height:1}
+.qty button:hover{border-color:var(--brass)}
+.qty span{font-family:var(--f-mono);min-width:1ch;text-align:center;font-variant-numeric:tabular-nums}
+.note{font-size:.8rem;color:var(--muted);background:var(--sunk);border-radius:10px;padding:10px 12px}
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.slot{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:10px;padding:10px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.slot b{font-family:var(--f-mono);font-size:.95rem}
+.slot small{font-size:.7rem;color:var(--muted)}
+.slot[aria-pressed="true"]{border-color:var(--brass);background:var(--brass-soft)}
+.slot:disabled{opacity:.45;cursor:not-allowed}
+.foot{padding:14px 18px 18px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.total{display:flex;justify-content:space-between;font-weight:600;font-variant-numeric:tabular-nums}
+.cta{font:inherit;font-weight:700;font-size:1rem;background:var(--brass);color:#fff;border:0;border-radius:12px;padding:14px;cursor:pointer}
+.cta:disabled{opacity:.4;cursor:not-allowed}
+.ghost{font:inherit;font-weight:600;background:transparent;color:var(--muted);border:0;padding:6px;cursor:pointer;text-decoration:underline}
+.ticket{border:2px dashed var(--line);border-radius:16px;padding:18px;text-align:center;display:flex;flex-direction:column;gap:6px}
+.big{font-family:var(--f-mono);font-weight:700;font-size:2.6rem;letter-spacing:.06em;line-height:1}
+.status{align-self:center;font-weight:700;font-size:.8rem;padding:5px 10px;border-radius:999px}
+.s-queued{background:var(--sunk);color:var(--muted)}
+.s-ready{background:var(--ok-soft);color:var(--ok)}
+.s-expired{background:var(--warn-soft);color:var(--warn)}
+.s-done{background:var(--brass-soft);color:var(--brass)}
+.rows{display:flex;flex-direction:column;gap:6px;font-size:.88rem;text-align:left}
+.rows div{display:flex;justify-content:space-between;gap:10px}
+.rows span:first-child{color:var(--muted)}
+
+/* staff board */
+.board{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.board h2{font-family:var(--f-display);font-weight:800;font-size:1.6rem;margin:0;letter-spacing:.02em}
+.board-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:baseline}
+.rule{font-size:.82rem;color:var(--muted)}
+.shelf{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;background:var(--sunk);padding:10px;border-radius:12px}
+@media (max-width:480px){.shelf{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.cubby{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px;min-height:86px;display:flex;flex-direction:column;gap:3px;font-size:.78rem;min-width:0}
+.cubby .id{font-family:var(--f-mono);font-weight:700;font-size:.85rem;color:var(--muted)}
+.cubby.full{border-left:4px solid var(--ok)}
+.cubby.late{border-left:4px solid var(--warn)}
+.cubby .who{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cubby .t{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.queue{display:flex;flex-direction:column;gap:8px}
+.order{display:grid;grid-template-columns:auto 1fr auto;gap:4px 12px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.order .code{font-family:var(--f-mono);font-weight:700}
+.order .what{font-size:.85rem;min-width:0}
+.order .what small{display:block;color:var(--muted)}
+.act{font:inherit;font-size:.82rem;font-weight:700;border-radius:8px;padding:7px 10px;cursor:pointer;border:1px solid var(--brass);background:transparent;color:var(--brass);white-space:nowrap}
+.act.solid{background:var(--brass);color:#fff}
+.ex{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:1px 4px;margin-left:6px}
+.empty{color:var(--muted);font-size:.88rem;padding:8px 0}
+.tester{background:var(--brass-soft);border-radius:12px;padding:14px 16px;font-size:.88rem}
+.tester ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+@media (prefers-reduced-motion:no-preference){.cubby,.order{transition:border-color .2s}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Side<span>bar</span> · prototype 2</h1>
+      <p class="sub">Order ahead, pick a pickup window, grab your lidded drink from a numbered shelf slot. Left is what a customer sees. Right is what the bar sees. Everything here is a sample for testing.</p>
+    </div>
+    <button class="reset" id="reset" type="button">Reset demo</button>
+  </header>
+
+  <div class="stage">
+    <section aria-label="Customer phone">
+      <p class="label">Customer view</p>
+      <div class="phone"><div class="screen" id="screen"></div></div>
+    </section>
+
+    <section class="board" aria-label="Bar staff pickup board">
+      <div class="board-head">
+        <h2>Pickup shelf</h2>
+        <span class="rule">Hold limit 10 min · ID checked at pickup</span>
+      </div>
+      <div>
+        <p class="label">Shelf slots</p>
+        <div class="shelf" id="shelf"></div>
+      </div>
+      <div>
+        <p class="label">Orders to make</p>
+        <div class="queue" id="queue"></div>
+      </div>
+      <div class="tester">
+        <b>For the interviewer</b>
+        <ul>
+          <li>Hand the phone side to the tester first. Let them order without help.</li>
+          <li>Then switch roles: you play customer, the bartender runs the shelf board.</li>
+          <li>Press "Expire" on a slot to talk through what happens when nobody picks up.</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+const MENU=[
+  {id:"lite",name:"Bud Light can",meta:"12 oz · grab and go",price:5},
+  {id:"mich",name:"Michelob Ultra can",meta:"12 oz · grab and go",price:5.5},
+  {id:"claw",name:"White Claw",meta:"12 oz can · grab and go",price:6},
+  {id:"vs",name:"Vodka soda",meta:"Simple pour · lidded cup",price:8},
+  {id:"water",name:"Water",meta:"Free · lidded cup",price:0}
+];
+const HOLD=600; // seconds
+const SLOTS=["A1","A2","A3","A4","B1","B2","B3","B4"];
+let state;
+function now(){return Math.floor(Date.now()/1000)}
+function pickupWindows(){
+  const d=new Date(); d.setSeconds(0,0);
+  const m=d.getMinutes(); d.setMinutes(m+(10-(m%10)));
+  const out=[];
+  const fullness=[.9,1,.5,.3,.2,.1];
+  for(let i=0;i<6;i++){const t=new Date(d.getTime()+i*10*60000);
+    out.push({label:t.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}),left:Math.round((1-fullness[i])*12),full:fullness[i]>=1});}
+  return out;
+}
+function fresh(){
+  const t=now();
+  return {step:"menu",cart:{},window:null,mine:null,windows:pickupWindows(),
+    orders:[
+      {code:"K7",who:"Jordan",items:"2× Bud Light can",win:"Now",status:"ready",slot:"A1",loadedAt:t-140,ex:true},
+      {code:"P2",who:"Sam",items:"1× Vodka soda",win:"Now",status:"ready",slot:"A3",loadedAt:t-560,ex:true},
+      {code:"Q9",who:"Riley",items:"3× White Claw",win:"Next window",status:"queued",slot:null,ex:true}
+    ]};
+}
+function money(n){return n===0?"Free":"$"+n.toFixed(2)}
+function cartTotal(){return Object.entries(state.cart).reduce((s,[id,q])=>s+MENU.find(m=>m.id===id).price*q,0)}
+function cartCount(){return Object.values(state.cart).reduce((a,b)=>a+b,0)}
+function cartText(){return Object.entries(state.cart).filter(([,q])=>q).map(([id,q])=>q+"× "+MENU.find(m=>m.id===id).name).join(", ")}
+function freeSlot(){const used=state.orders.filter(o=>o.slot&&o.status==="ready").map(o=>o.slot);return SLOTS.find(s=>!used.includes(s))}
+function el(html){const t=document.createElement("template");t.innerHTML=html.trim();return t.content}
+
+function renderPhone(){
+  const s=document.getElementById("screen"); s.innerHTML="";
+  const head=`<div class="bar"><div class="venue">The Corner Tap<small>Example venue · Franklin St</small></div><span class="badge">Sidebar</span></div>`;
+  if(state.step==="menu"){
+    s.append(el(head+`<div class="body"><span class="step">Step 1 of 3 · Choose drinks</span>
+      ${MENU.map(m=>`<div class="item"><b>${m.name}</b><div class="qty"><button type="button" data-d="-1" data-id="${m.id}" aria-label="Remove ${m.name}">−</button><span>${state.cart[m.id]||0}</span><button type="button" data-d="1" data-id="${m.id}" aria-label="Add ${m.name}">+</button></div><span class="meta">${m.meta} · ${money(m.price)}</span></div>`).join("")}
+      <p class="note">Sidebar only carries drinks that hold well: cans, bottles and simple pours. Cocktails are still ordered at the main bar.</p></div>
+      <div class="foot"><div class="total"><span>${cartCount()} item${cartCount()===1?"":"s"}</span><span>${money(cartTotal())}</span></div>
+      <button class="cta" id="next" type="button" ${cartCount()?"":"disabled"}>Choose a pickup time</button></div>`));
+    s.querySelectorAll(".qty button").forEach(b=>b.onclick=()=>{const id=b.dataset.id;state.cart[id]=Math.max(0,Math.min(6,(state.cart[id]||0)+ +b.dataset.d));renderPhone()});
+    s.querySelector("#next").onclick=()=>{state.step="time";renderPhone()};
+  }
+  else if(state.step==="time"){
+    s.append(el(head+`<div class="body"><span class="step">Step 2 of 3 · Pickup window</span>
+      <p style="margin:0">Pick when you want your drinks waiting. Each window has a set number of orders so the bar isn't slammed.</p>
+      <div class="slots">${state.windows.map((w,i)=>`<button type="button" class="slot" data-i="${i}" aria-pressed="${state.window===i}" ${w.full?"disabled":""}><b>${w.label}</b><small>${w.full?"Full":w.left+" left"}</small></button>`).join("")}</div>
+      <p class="note">Your drinks sit on the shelf for up to 10 minutes. After that they go back to the bar and you can grab them from a bartender.</p></div>
+      <div class="foot"><button class="cta" id="next" type="button" ${state.window===null?"disabled":""}>Review and pay</button><button class="ghost" id="back" type="button">Back to drinks</button></div>`));
+    s.querySelectorAll(".slot").forEach(b=>b.onclick=()=>{state.window=+b.dataset.i;renderPhone()});
+    s.querySelector("#next").onclick=()=>{state.step="pay";renderPhone()};
+    s.querySelector("#back").onclick=()=>{state.step="menu";renderPhone()};
+  }
+  else if(state.step==="pay"){
+    const fee=cartCount()?0.5:0;
+    s.append(el(head+`<div class="body"><span class="step">Step 3 of 3 · Review</span>
+      <div class="rows"><div><span>Drinks</span><span>${cartText()}</span></div>
+      <div><span>Pickup window</span><span>${state.windows[state.window].label}</span></div>
+      <div><span>Subtotal</span><span>${money(cartTotal())}</span></div>
+      <div><span>Sidebar fee</span><span>${money(fee)}</span></div>
+      <div><b>Total</b><b>${money(cartTotal()+fee)}</b></div></div>
+      <p class="note">Bring your ID. A staff member checks it when you pick up, same as at the bar.</p>
+      <p class="note">Regulars earn points toward perks like skipping the line at the door or waived cover. No drink discounts.</p></div>
+      <div class="foot"><button class="cta" id="pay" type="button">Place order (demo, no charge)</button><button class="ghost" id="back" type="button">Change pickup time</button></div>`));
+    s.querySelector("#pay").onclick=()=>{
+      state.n=(state.n||0)+1; const code="N"+state.n;
+      const o={code,who:"You",items:cartText(),win:state.windows[state.window].label,status:"queued",slot:null};
+      state.orders.unshift(o); state.mine=o; state.step="ticket"; renderAll();
+    };
+    s.querySelector("#back").onclick=()=>{state.step="time";renderPhone()};
+  }
+  else{
+    const o=state.mine;
+    const map={queued:["s-queued","Order received · being made"],ready:["s-ready","Ready on the shelf"],expired:["s-expired","Moved back to the bar"],done:["s-done","Picked up · enjoy"]};
+    const [cls,txt]=map[o.status];
+    let left="";
+    if(o.status==="ready"){const r=Math.max(0,HOLD-(now()-o.loadedAt));left=`<div><span>Held for</span><span class="t" id="holdleft">${Math.floor(r/60)}:${String(r%60).padStart(2,"0")} more</span></div>`}
+    s.append(el(head+`<div class="body"><span class="step">Your pickup ticket</span>
+      <div class="ticket"><span class="status ${cls}">${txt}</span>
+        <span class="label" style="margin:6px 0 0">${o.status==="ready"?"Go to shelf slot":"Pickup code"}</span>
+        <span class="big">${o.status==="ready"?o.slot:o.code}</span>
+        ${o.status==="ready"?`<span>Show code <b style="font-family:var(--f-mono)">${o.code}</b> and your ID</span>`:""}
+      </div>
+      <div class="rows"><div><span>Drinks</span><span>${o.items}</span></div><div><span>Window</span><span>${o.win}</span></div>${left}</div>
+      <p class="note">${o.status==="queued"?"We'll notify you when it's on the shelf. Use the bar board on the right to load it.":o.status==="expired"?"Nobody picked it up in 10 minutes, so a bartender has it. Show your code at the main bar.":"Slots are lidded and labeled, so grab only the one with your code."}</p></div>
+      <div class="foot"><button class="ghost" id="again" type="button">Start a new order</button></div>`));
+    s.querySelector("#again").onclick=()=>{state.cart={};state.window=null;state.mine=null;state.step="menu";renderPhone()};
+  }
+}
+
+function renderBoard(){
+  const shelf=document.getElementById("shelf"); shelf.innerHTML="";
+  SLOTS.forEach(id=>{
+    const o=state.orders.find(x=>x.slot===id&&x.status==="ready");
+    if(!o){shelf.append(el(`<div class="cubby"><span class="id">${id}</span><span style="color:var(--muted)">Empty</span></div>`));return}
+    const age=now()-o.loadedAt, late=age>HOLD-120;
+    const c=el(`<div class="cubby ${late?"late":"full"}"><span class="id">${id}</span><span class="who">${o.code} · ${o.who}${o.ex?'<span class="ex">Example</span>':""}</span><span class="t" data-age="${o.code}">${Math.floor(age/60)}:${String(age%60).padStart(2,"0")} on shelf</span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:auto"><button class="act solid" type="button" data-pick="${o.code}">ID ok · picked up</button><button class="act" type="button" data-exp="${o.code}">Expire</button></div></div>`);
+    shelf.append(c);
+  });
+  shelf.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{const o=state.orders.find(x=>x.code===b.dataset.pick);o.status="done";o.slot=null;renderAll()});
+  shelf.querySelectorAll("[data-exp]").forEach(b=>b.onclick=()=>{const o=state.orders.find(x=>x.code===b.dataset.exp);o.status="expired";o.slot=null;renderAll()});
+
+  const q=document.getElementById("queue"); q.innerHTML="";
+  const todo=state.orders.filter(o=>o.status==="queued");
+  if(!todo.length){q.append(el(`<p class="empty">Nothing to make. New Sidebar orders show up here.</p>`));return}
+  todo.forEach(o=>{
+    const free=freeSlot();
+    q.append(el(`<div class="order"><span class="code">${o.code}</span><span class="what">${o.items}${o.ex?'<span class="ex">Example</span>':""}<small>${o.who} · window ${o.win}</small></span>
+      <button class="act solid" type="button" data-load="${o.code}" ${free?"":"disabled"}>${free?"Lid + load "+free:"Shelf full"}</button></div>`));
+  });
+  q.querySelectorAll("[data-load]").forEach(b=>b.onclick=()=>{const o=state.orders.find(x=>x.code===b.dataset.load);o.slot=freeSlot();o.status="ready";o.loadedAt=now();renderAll()});
+}
+function renderAll(){renderPhone();renderBoard()}
+function tick(){
+  let changed=false;
+  state.orders.forEach(o=>{if(o.status==="ready"&&now()-o.loadedAt>=HOLD){o.status="expired";o.slot=null;changed=true}});
+  if(changed){renderAll();return}
+  // update clocks in place so buttons are never rebuilt mid-click
+  document.querySelectorAll("[data-age]").forEach(sp=>{
+    const o=state.orders.find(x=>x.code===sp.dataset.age); if(!o||o.status!=="ready")return;
+    const age=now()-o.loadedAt; sp.textContent=Math.floor(age/60)+":"+String(age%60).padStart(2,"0")+" on shelf";
+    const cub=sp.closest(".cubby"); const late=age>HOLD-120; cub.classList.toggle("late",late); cub.classList.toggle("full",!late);
+  });
+  const hl=document.getElementById("holdleft");
+  if(hl&&state.mine&&state.mine.status==="ready"){const r=Math.max(0,HOLD-(now()-state.mine.loadedAt));hl.textContent=Math.floor(r/60)+":"+String(r%60).padStart(2,"0")+" more"}
+}
+document.getElementById("reset").onclick=()=>{state=fresh();renderAll()};
+state=fresh(); renderAll(); setInterval(tick,1000);
+</script>
+
+</body></html>
